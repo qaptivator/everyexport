@@ -66,7 +66,7 @@ public class Everyexport implements ModInitializer {
                                             }
 
                                             player.sendMessage(messagePrefix
-                                                    .append(Text.literal(" Exported " + type + " to config/" + folder + " ").styled(style -> style.withColor(Formatting.WHITE)
+                                                    .append(Text.literal(" Exported " + type + " as JSON ").styled(style -> style.withColor(Formatting.WHITE)
                                                             .withBold(false)
                                                             .withUnderline(false)
                                                     ))
@@ -91,6 +91,7 @@ public class Everyexport implements ModInitializer {
                                     })));
 
             // todo: add "open folder" clickable box in export command output, possibly made using "Desktop.getDesktop().open(dir);"
+            // todo: add a config option to limit this command to op players only, possibly with ".requires(source -> source.hasPermissionLevel(2))"
         });
     }
 
