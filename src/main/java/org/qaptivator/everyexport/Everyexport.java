@@ -155,6 +155,22 @@ public class Everyexport implements ModInitializer {
         writeToFile(itemsMap, "items.json");
     }
 
+    private static final char[] SYMBOLS = initSymbols();
+
+    private static char[] initSymbols() {
+        List<Character> symbols = new ArrayList<>();
+        symbols.add('#');
+        for (char c = 'A'; c <= 'Z'; c++) symbols.add(c);
+        for (char c = 'a'; c <= 'z'; c++) symbols.add(c);
+        for (char c = '0'; c <= '9'; c++) symbols.add(c);
+        char[] array = new char[symbols.size()];
+        for (int i = 0; i < symbols.size(); i++) {
+            array[i] = symbols.get(i);
+        }
+        return array;
+    }
+
+
     private void exportRecipes(String folder, ServerCommandSource source) throws Exception {
         DynamicRegistryManager registryManager = source.getServer().getRegistryManager();
         RecipeManager recipeManager = source.getServer().getRecipeManager();
@@ -185,33 +201,38 @@ public class Everyexport implements ModInitializer {
                 recipeMap.put("width", width);
                 recipeMap.put("height", height);
 
-                // Build pattern and key
+                Map<String, Character> itemToSymbol = new HashMap<>();
                 Map<Character, Map<String, Object>> keyMap = new HashMap<>();
-                String[] pattern = new String[height];
                 char nextChar = 'A';
-                Map<Integer, Character> indexToChar = new HashMap<>();
+
+                String[] pattern = new String[height];
 
                 for (int row = 0; row < height; row++) {
                     StringBuilder rowPattern = new StringBuilder();
                     for (int col = 0; col < width; col++) {
                         int index = row * width + col;
                         Ingredient ingredient = ingredients.get(index);
+
                         if (ingredient.isEmpty()) {
                             rowPattern.append(" ");
                         } else {
-                            // assign a unique char for this ingredient
-                            Character symbol = indexToChar.get(index);
+                            // use the first matching item
+                            ItemStack[] matches = ingredient.getMatchingStacks();
+                            if (matches.length == 0) {
+                                rowPattern.append("?");
+                                continue;
+                            }
+
+                            String itemId = Registries.ITEM.getId(matches[0].getItem()).toString();
+
+                            // reuse symbol if we've already assigned one
+                            Character symbol = itemToSymbol.get(itemId);
                             if (symbol == null) {
                                 symbol = nextChar++;
-                                indexToChar.put(index, symbol);
-
-                                // one of the matching items (for simplicity)
-                                ItemStack[] matches = ingredient.getMatchingStacks();
-                                if (matches.length > 0) {
-                                    String itemId = Registries.ITEM.getId(matches[0].getItem()).toString();
-                                    keyMap.put(symbol, Map.of("item", itemId));
-                                }
+                                itemToSymbol.put(itemId, symbol);
+                                keyMap.put(symbol, Map.of("item", itemId));
                             }
+
                             rowPattern.append(symbol);
                         }
                     }
@@ -250,24 +271,7 @@ public class Everyexport implements ModInitializer {
                 recipeMap.put("cook", false);
             }
 
-            // ingredients
-            /*List<Map<String, Object>> ingredients = new ArrayList<>();
-            for (Ingredient ingredient : recipe.getIngredients()) {
-                List<String> matchingItems = Arrays.stream(ingredient.getMatchingStacks())
-                        .map(stack -> Registries.ITEM.getId(stack.getItem()).toString())
-                        .distinct()
-                        .toList();
-                ingredients.add(Map.of("options", matchingItems));
-            }
-            recipeMap.put("ingredients", ingredients);*/
-
-            // shaped-specific info
-            /*if (recipe instanceof ShapedRecipe shaped) {
-                recipeMap.put("width", shaped.getWidth());
-                recipeMap.put("height", shaped.getHeight());
-            }
-
-            recipesMap.put(recipe.getId().toString(), recipeMap);*/
+            recipesMap.put(recipe.getId().toString(), recipeMap);
         }
 
         writeToFile(recipesMap, "recipes.json");
