@@ -5,7 +5,11 @@
   "name": "EveryExport",
   "description": "exports item and recipe data as json.\nmade for enthusiasts, who want to work with actual item data, instead of spending a while trying to find it online.",
   "authors": [],
-  "contact": {},
+  "contact": {
+    "homepage": "https://github.com/qaptivator/everyexport",
+    "sources": "https://github.com/qaptivator/everyexport",
+    "issues": "https://github.com/qaptivator/everyexport/issues"
+  },
   "license": "All-Rights-Reserved",
   "icon": "assets/everyexport/icon.png",
   "environment": "*",
