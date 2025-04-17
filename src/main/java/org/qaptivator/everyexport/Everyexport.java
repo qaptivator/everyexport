@@ -100,30 +100,26 @@ public class Everyexport implements ModInitializer {
         });
     }
 
-    private void exportItems(String folder) throws Exception {
-        File dir = Paths.get("config", folder).toFile();
+    private void writeToFile(Object map, String name) throws Exception {
+        File dir = Paths.get("config", MOD_ID).toFile();
         if (!dir.exists()) dir.mkdirs();
+        File file = new File(dir, name);
+        FileWriter writer = new FileWriter(file);
+        writer.write(gson.toJson(map));
+        writer.close();
+    }
 
-        File itemsFile = new File(dir, "items.json");
-        FileWriter writer = new FileWriter(itemsFile);
-
+    private void exportItems(String folder) throws Exception {
         Map<String, Object> items = new HashMap<>();
         Registries.ITEM.forEach(item -> {
             Identifier id = Registries.ITEM.getId(item);
             items.put(id.toString(), item.toString());
         });
 
-        writer.write(toJson(items));
-        writer.close();
+        writeToFile(items, "items.json");
     }
 
     private void exportRecipes(String folder, ServerCommandSource source) throws Exception {
-        File dir = Paths.get("config", folder).toFile();
-        if (!dir.exists()) dir.mkdirs();
-
-        File recipesFile = new File(dir, "recipes.json");
-        FileWriter writer = new FileWriter(recipesFile);
-
         var registryManager = source.getServer().getRegistryManager();
         RecipeManager recipeManager = source.getServer().getRecipeManager();
         Map<String, Object> recipes = new HashMap<>();
@@ -133,17 +129,6 @@ public class Everyexport implements ModInitializer {
             recipes.put(id.toString(), recipe.getOutput(registryManager).toString());
         }
 
-        writer.write(toJson(recipes));
-        writer.close();
-    }
-
-    private String toJson(Map<String, Object> map) {
-        return gson.toJson(map);
-        /*StringBuilder sb = new StringBuilder();
-        sb.append("{\n");
-        map.forEach((k, v) -> sb.append("  \"").append(k).append("\": \"").append(v).append("\",\n"));
-        if (!map.isEmpty()) sb.setLength(sb.length() - 2); // Remove trailing comma
-        sb.append("\n}\n");
-        return sb.toString();*/
+        writeToFile(recipes, "recipes.json");
     }
 }
