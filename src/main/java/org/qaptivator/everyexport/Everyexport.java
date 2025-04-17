@@ -13,6 +13,9 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import net.minecraft.text.ClickEvent;
 import net.minecraft.text.Text;
+import  net.minecraft.text.MutableText;
+import net.minecraft.text.TextColor;
+import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 //import net.minecraft.command.CommandRegistryAccess;
 //import net.minecraft.server.command.CommandManager.RegistrationEnvironment;
@@ -29,6 +32,8 @@ import static net.minecraft.server.command.CommandManager.literal;
 
 public class Everyexport implements ModInitializer {
 
+    public static final String MOD_ID = "everyexport";
+
     private static final SuggestionProvider<ServerCommandSource> EXPORT_TYPE_SUGGESTIONS = (context, builder) -> {
         return CommandSource.suggestMatching(new String[]{"all", "items", "recipes"}, builder);
     };
@@ -40,10 +45,15 @@ public class Everyexport implements ModInitializer {
                     //.requires(source -> source.hasPermissionLevel(2))
                     .then(CommandManager.argument("type", StringArgumentType.word())
                             .suggests(EXPORT_TYPE_SUGGESTIONS)
-                            .then(CommandManager.argument("folder", StringArgumentType.string())
                                 .executes(context -> {
+                                        // formatted returns MutableText, styled returns Text
+                                        MutableText messagePrefix = Text.literal("[EveryExport]")
+                                                .formatted(Formatting.AQUA, Formatting.BOLD);
+
                                         String type = StringArgumentType.getString(context, "type");
-                                        String folder = StringArgumentType.getString(context, "folder");
+                                        String folder = MOD_ID; // StringArgumentType.getString(context, "folder");
+                                        String fullPath = Paths.get("config", folder).toAbsolutePath().toString();
+
                                         ServerCommandSource source = context.getSource();
                                         ServerPlayerEntity player = source.getPlayer();
 
@@ -55,38 +65,32 @@ public class Everyexport implements ModInitializer {
                                                 exportRecipes(folder, source);
                                             }
 
-                                            Text clickable = Text.literal("[Open folder]")
+                                            player.sendMessage(messagePrefix
+                                                    .append(Text.literal(" Exported " + type + " to config/" + folder + " ").styled(style -> style.withColor(Formatting.WHITE)
+                                                            .withBold(false)
+                                                            .withUnderline(false)
+                                                    ))
+                                                    .append(Text.literal("[Copy the full path]").styled(style -> style.withColor(Formatting.GOLD)
+                                                            .withBold(false)
+                                                            .withUnderline(true)
+                                                            .withClickEvent(new ClickEvent(ClickEvent.Action.COPY_TO_CLIPBOARD, fullPath)))),
+                                                    false);
+
+                                            /*Text clickable = Text.literal("[Open folder]")
                                                     .styled(style -> style.withColor(0x00AAFF)
                                                             .withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/everyexport_openfolder " + folder))
-                                                            .withUnderline(true));
+                                                            .withUnderline(true));*/
 
-                                            player.sendMessage(Text.of("[EveryExport] Exported " + type + " to folder: " + folder), false);
-                                            player.sendMessage(clickable, false);
+                                            //player.sendMessage(Text.of("[EveryExport] Exported " + type + " to folder: " + folder), false);
+                                            //player.sendMessage(clickable, false);
                                         } catch (Exception e) {
-                                            player.sendMessage(Text.of("[EveryExport] Error: " + e.getMessage()), false);
+                                            //player.sendMessage(Text.of("[EveryExport] Error: " + e.getMessage()), false);
                                         }
 
                                         return 1;
-                                    }))));
+                                    })));
 
-            dispatcher.register(literal("everyexport_openfolder")
-                    //.requires(source -> source.hasPermissionLevel(2))
-                    .then(CommandManager.argument("folder", StringArgumentType.string())
-                            .executes(context -> {
-                                String folder = StringArgumentType.getString(context, "folder");
-                                File dir = Paths.get("config", folder).toFile();
-                                try {
-                                    if (dir.exists()) {
-                                        Desktop.getDesktop().open(dir);
-                                        context.getSource().sendFeedback(() -> Text.of("📂 Opened folder: " + dir.getAbsolutePath()), false);
-                                    } else {
-                                        context.getSource().getPlayer().sendMessage(Text.of("Folder does not exist: " + dir.getAbsolutePath()));
-                                    }
-                                } catch (IOException e) {
-                                    context.getSource().getPlayer().sendMessage(Text.of("Failed to open folder: " + e.getMessage()));
-                                }
-                                return 1;
-                            })));
+            // todo: add "open folder" clickable box in export command output, possibly made using "Desktop.getDesktop().open(dir);"
         });
     }
 
