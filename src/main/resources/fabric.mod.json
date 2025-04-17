@@ -3,7 +3,7 @@
   "id": "everyexport",
   "version": "${version}",
   "name": "EveryExport",
-  "description": "",
+  "description": "exports item and recipe data as json.\n\nmade for enthusiasts, who want to work with actual item data, instead of spending a while trying to find it online.",
   "authors": [],
   "contact": {},
   "license": "All-Rights-Reserved",
