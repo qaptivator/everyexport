@@ -36,3 +36,8 @@ in my case, it's just an array with one element. deal with it.
 All rights reserved.
 
 although you're completely free to use this mod in modpacks, just credit me somewhere (but you probably wont because this mod is really technical and mostly for one time use)
+
+# todo
+
+- [ ] make this client side only by porting it over from a command to some shortcut or ui button
+- [x] read more todos in the code
