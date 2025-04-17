@@ -176,12 +176,21 @@ public class Everyexport implements ModInitializer {
         RecipeManager recipeManager = source.getServer().getRecipeManager();
         Map<String, Object> recipesMap = new HashMap<>();
 
+        // todo: add more recipe types
+        // todo: maybe add a thing which computes the total amount of needed ingredients for you
+        // todo: maybe allow the ingredients to be a string if needed. as of now, it's just an array with one element for most crafts
+        // todo: actually document all these jsons
+        // note: this should be kept in the same format as vanilla datapack recipes/items (so, use snake_case and stick to vanilla field names)
         for (Recipe<?> recipe : recipeManager.values()) {
             Map<String, Object> recipeMap = new HashMap<>();
 
             // common properties
             recipeMap.put("id", recipe.getId().toString());
             recipeMap.put("type", recipe.getType().toString());
+            recipeMap.put("group", recipe.getGroup());
+            // to prevent lots of falses and trues
+            if (!recipe.showNotification()) recipeMap.put("show_notification", recipe.showNotification());
+            if (recipe.isIgnoredInRecipeBook()) recipeMap.put("is_ignored_in_recipe_book", recipe.isIgnoredInRecipeBook());
 
             // output
             ItemStack output = recipe.getOutput(registryManager);
@@ -189,6 +198,16 @@ public class Everyexport implements ModInitializer {
                     "item", Registries.ITEM.getId(output.getItem()).toString(),
                     "count", output.getCount()
             ));
+
+            // smelting/blasting/brewing/etc
+            if (recipe instanceof AbstractCookingRecipe cooking) {
+                Map<String, Object> cookMap = new HashMap<>();
+                cookMap.put("time", cooking.getCookTime());
+                cookMap.put("experience", cooking.getExperience());
+                recipeMap.put("cook", cookMap);
+            } else {
+                recipeMap.put("cook", false);
+            }
 
             // ingredients
             List<Ingredient> ingredients = recipe.getIngredients();
@@ -203,40 +222,49 @@ public class Everyexport implements ModInitializer {
 
                 Map<String, Character> itemToSymbol = new HashMap<>();
                 Map<Character, Map<String, Object>> keyMap = new HashMap<>();
-                char nextChar = 'A';
+                int symbolIndex = 0;
 
                 String[] pattern = new String[height];
+                boolean overflow = false;
 
                 for (int row = 0; row < height; row++) {
-                    StringBuilder rowPattern = new StringBuilder();
+                    StringBuilder line = new StringBuilder();
                     for (int col = 0; col < width; col++) {
                         int index = row * width + col;
                         Ingredient ingredient = ingredients.get(index);
 
                         if (ingredient.isEmpty()) {
-                            rowPattern.append(" ");
+                            line.append(" ");
                         } else {
-                            // use the first matching item
                             ItemStack[] matches = ingredient.getMatchingStacks();
                             if (matches.length == 0) {
-                                rowPattern.append("?");
+                                line.append("?");
                                 continue;
                             }
 
                             String itemId = Registries.ITEM.getId(matches[0].getItem()).toString();
-
-                            // reuse symbol if we've already assigned one
                             Character symbol = itemToSymbol.get(itemId);
                             if (symbol == null) {
-                                symbol = nextChar++;
+                                if (symbolIndex >= SYMBOLS.length) {
+                                    overflow = true;
+                                    break;
+                                }
+                                symbol = SYMBOLS[symbolIndex++];
                                 itemToSymbol.put(itemId, symbol);
                                 keyMap.put(symbol, Map.of("item", itemId));
                             }
-
-                            rowPattern.append(symbol);
+                            line.append(symbol);
                         }
                     }
-                    pattern[row] = rowPattern.toString();
+
+                    if (overflow) break;
+                    pattern[row] = line.toString();
+                }
+
+                if (overflow) {
+                    pattern = new String[] {
+                            "symbol overflow: there is over " + SYMBOLS.length + " items used in the recipe"
+                    };
                 }
 
                 recipeMap.put("pattern", pattern);
@@ -244,31 +272,22 @@ public class Everyexport implements ModInitializer {
             } else {
                 recipeMap.put("shaped", false);
 
-                List<Map<String, Object>> simpleIngredients = new ArrayList<>();
+                List<List<String>> simpleIngredients = new ArrayList<>();
                 for (Ingredient ingredient : ingredients) {
-                    if (ingredient.isEmpty()) {
-                        simpleIngredients.add(Map.of("empty", true));
-                        continue;
-                    }
-
                     List<String> matchingItems = Arrays.stream(ingredient.getMatchingStacks())
                             .map(stack -> Registries.ITEM.getId(stack.getItem()).toString())
                             .distinct()
                             .toList();
 
-                    simpleIngredients.add(Map.of("options", matchingItems));
+                    simpleIngredients.add(matchingItems);
+
+                    /*if (ingredient.isEmpty()) {
+                        simpleIngredients.add(Map.of("empty", true));
+                        continue;
+                    }*/
+                    //simpleIngredients.add(Map.of("options", matchingItems));
                 }
                 recipeMap.put("ingredients", simpleIngredients);
-            }
-
-            // smelting/blasting/brewing/etc
-            if (recipe instanceof AbstractCookingRecipe cooking) {
-                Map<String, Object> cookMap = new HashMap<>();
-                cookMap.put("time", cooking.getCookTime());
-                cookMap.put("experience", cooking.getExperience());
-                recipeMap.put("cook", cookMap);
-            } else {
-                recipeMap.put("cook", false);
             }
 
             recipesMap.put(recipe.getId().toString(), recipeMap);
