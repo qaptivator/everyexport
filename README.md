@@ -28,3 +28,9 @@ _if you're contributing, remember to use snake_case for json fields._
 
 note: some fields have one or multiple something (like ingredients), which in vanilla usually means it's a string or array of strings.  
 in my case, it's just an array with one element. deal with it.
+
+# license
+
+All rights reserved.
+
+although you're completely free to use this mod in modpacks, just credit me somewhere (but you probably wont because this mod is really technical and mostly for one time use)
