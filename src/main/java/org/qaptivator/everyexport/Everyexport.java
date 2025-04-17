@@ -28,6 +28,9 @@ import java.util.Map;
 import java.awt.Desktop;
 import java.io.IOException;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
 import static net.minecraft.server.command.CommandManager.literal;
 
 public class Everyexport implements ModInitializer {
@@ -37,6 +40,8 @@ public class Everyexport implements ModInitializer {
     private static final SuggestionProvider<ServerCommandSource> EXPORT_TYPE_SUGGESTIONS = (context, builder) -> {
         return CommandSource.suggestMatching(new String[]{"all", "items", "recipes"}, builder);
     };
+
+    public static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
     @Override
     public void onInitialize() {
@@ -133,11 +138,12 @@ public class Everyexport implements ModInitializer {
     }
 
     private String toJson(Map<String, Object> map) {
-        StringBuilder sb = new StringBuilder();
+        return gson.toJson(map);
+        /*StringBuilder sb = new StringBuilder();
         sb.append("{\n");
         map.forEach((k, v) -> sb.append("  \"").append(k).append("\": \"").append(v).append("\",\n"));
         if (!map.isEmpty()) sb.setLength(sb.length() - 2); // Remove trailing comma
         sb.append("\n}\n");
-        return sb.toString();
+        return sb.toString();*/
     }
 }
