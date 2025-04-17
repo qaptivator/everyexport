@@ -8,6 +8,8 @@ made for enthusiasts, who want to work with actual item data, instead of spendin
 _**made for fabric 1.20.1**_, newer versions or forge will probably not get supported anytime soon.  
 fun fact: this is my first fabric mod. (and i realized that writing in java is so goddamn painful)
 
+**NEEDS FABRIC API!!!!!**
+
 # usage
 
 `/everyexport <type>`, where type can be `all`, `items` and `recipes`.  
